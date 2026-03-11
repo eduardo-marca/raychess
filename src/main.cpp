@@ -1,16 +1,17 @@
 #include <raylib.h>
 
 #include <consts.hpp>
+#include <board.hpp>
 #include <renderer.hpp>
 
 int main(void) {
 
-    Renderer renderer;
-    Board board;
-
     InitWindow(screenWidth, screenHeight, "RayChess");
-
+    
     SetTargetFPS(60);
+    
+    Board board;
+    Renderer renderer;
 
     while (!WindowShouldClose()) {
         BeginDrawing();
