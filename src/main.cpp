@@ -5,7 +5,7 @@ const int screenHeight = 450;
 
 int main(void) {
 
-    InitWindow(screenWidth, screenHeight, "Raylib Template");
+    InitWindow(screenWidth, screenHeight, "RayChess");
 
     SetTargetFPS(60);
 
@@ -14,7 +14,7 @@ int main(void) {
 
             ClearBackground(RAYWHITE);
 
-            DrawText("Raylib Template", 190, 200, 20, LIGHTGRAY);
+            DrawText("RayChess", 190, 200, 20, LIGHTGRAY);
 
         EndDrawing();
     }
