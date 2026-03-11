@@ -1,7 +1,7 @@
 #include <raylib.h>
 
 #include <consts.hpp>
-#include <board.hpp>
+#include <game.hpp>
 #include <renderer.hpp>
 
 int main(void) {
@@ -10,7 +10,7 @@ int main(void) {
     
     SetTargetFPS(60);
     
-    Board board;
+    Game game;
     Renderer renderer;
 
     while (!WindowShouldClose()) {
@@ -18,7 +18,7 @@ int main(void) {
 
             ClearBackground(RAYWHITE);
 
-            renderer.renderBoard(board);
+            renderer.renderGame(game);
 
         EndDrawing();
     }

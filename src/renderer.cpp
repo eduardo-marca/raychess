@@ -4,8 +4,6 @@
 
 Renderer::Renderer() {
     piecesTextures = LoadTexture("src/imgs/chess_pieces.png");
-    std::cout << "w: " << piecesTextures.width << std::endl;
-    std::cout << "h: " << piecesTextures.height << std::endl;
 
     float w = piecesTextures.width / 6.0f;
     float h = piecesTextures.height / 2.0f;
@@ -21,7 +19,12 @@ Renderer::Renderer() {
     }
 }
 
-void Renderer::renderBoard(Board &board) {
+void Renderer::renderGame(Game &game) {
+    renderBoard(game.board);
+}
+
+void Renderer::renderBoard(Board &board)
+{
     // Render board squares
     for(int row = 0; row < 8; row++) {
         for(int col = 0; col < 8; col++) {

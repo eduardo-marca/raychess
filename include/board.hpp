@@ -1,19 +1,22 @@
 #pragma once
 
 #include <piece.hpp>
+#include <cstdint>
 
 class Board {
     private:
-        Piece pieces[8][8] = {
-            {BR, BN, BB, BQ, BK, BB, BN, BR},
-            {BP, BP, BP, BP, BP, BP, BP, BP},
-            {NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE},
-            {NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE},
-            {NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE},
-            {NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE},
-            {WP, WP, WP, WP, WP, WP, WP, WP},
-            {WR, WN, WB, WQ, WK, WB, WN, WR}
-        };
+        using Bitboard = std::uint64_t;
+        Bitboard bitboards[2][6]{};
+
+        static inline int square_index(int row, int col) {
+            return row * 8 + col;
+        }
+
+        static inline Bitboard square_mask(int row, int col) {
+            return Bitboard(1) << square_index(row, col);
+        }
+
+        void set_piece(Piece piece, int row, int col);
 
     public:
         Board();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <board.hpp>
+#include <game.hpp>
 #include <raylib.h>
 
 class Renderer {
@@ -11,5 +12,6 @@ class Renderer {
     public:
         Renderer();
 
+        void renderGame(Game& game);
         void renderBoard(Board& board);
 };
