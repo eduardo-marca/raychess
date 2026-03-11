@@ -1,9 +1,12 @@
 #include <raylib.h>
 
-const int screenWidth = 800;
-const int screenHeight = 450;
+#include <consts.hpp>
+#include <renderer.hpp>
 
 int main(void) {
+
+    Renderer renderer;
+    Board board;
 
     InitWindow(screenWidth, screenHeight, "RayChess");
 
@@ -14,7 +17,7 @@ int main(void) {
 
             ClearBackground(RAYWHITE);
 
-            DrawText("RayChess", 190, 200, 20, LIGHTGRAY);
+            renderer.renderBoard(board);
 
         EndDrawing();
     }
