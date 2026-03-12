@@ -19,7 +19,7 @@ Board::Board() {
     }
 }
 
-Piece Board::get_piece(int row, int col) {
+Piece Board::get_piece(int row, int col) const {
     Bitboard mask = square_mask(row, col);
 
     for (int color = 0; color < 2; color++) {

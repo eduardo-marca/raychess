@@ -22,6 +22,6 @@ class Board {
     public:
         Board();
 
-        Piece get_piece(int row, int col);
+        Piece get_piece(int row, int col) const;
         void move_piece(int from_row, int from_col, int to_row, int to_col);
 };
