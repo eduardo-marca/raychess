@@ -7,6 +7,10 @@ Game::Game() {
     draggingSquare = -1;
     dragPosition = { 0.0f, 0.0f };
     sideToMove = PieceColor::White;
+    castlingRights = MoveGenerator::CASTLE_WHITE_KING
+        | MoveGenerator::CASTLE_WHITE_QUEEN
+        | MoveGenerator::CASTLE_BLACK_KING
+        | MoveGenerator::CASTLE_BLACK_QUEEN;
 }
 
 void Game::update() {
@@ -127,14 +131,34 @@ bool Game::attempt_move(int fromSquare, int toSquare) {
         return false;
     }
 
-    Piece promotion = move->isPromotion ? move->promotionPiece : Piece::None;
-    board.move_piece(fromRow, fromCol, toRow, toCol, promotion);
+    Piece target = board.get_piece(toRow, toCol);
+    update_castling_rights(fromSquare, toSquare, moving, target);
+
+    if (move->isCastling) {
+        board.move_piece(fromRow, fromCol, toRow, toCol);
+        if (sideToMove == PieceColor::White) {
+            if (toSquare == 7 * 8 + 6) {
+                board.move_piece(7, 7, 7, 5);
+            } else {
+                board.move_piece(7, 0, 7, 3);
+            }
+        } else {
+            if (toSquare == 0 * 8 + 6) {
+                board.move_piece(0, 7, 0, 5);
+            } else {
+                board.move_piece(0, 0, 0, 3);
+            }
+        }
+    } else {
+        Piece promotion = move->isPromotion ? move->promotionPiece : Piece::None;
+        board.move_piece(fromRow, fromCol, toRow, toCol, promotion);
+    }
     sideToMove = (sideToMove == PieceColor::White) ? PieceColor::Black : PieceColor::White;
     return true;
 }
 
 void Game::refresh_legal_moves() {
-    legalMoves = movegen.generateMoves(board, sideToMove);
+    legalMoves = movegen.generateMoves(board, sideToMove, castlingRights);
 }
 
 void Game::refresh_selected_moves() {
@@ -182,4 +206,36 @@ const Move* Game::find_legal_move(int fromSquare, int toSquare) const {
     }
 
     return fallback;
+}
+
+void Game::update_castling_rights(int fromSquare, int toSquare, Piece moving, Piece captured) {
+    auto clear = [&](int mask) { castlingRights &= ~mask; };
+
+    if (getType(moving) == PieceType::K) {
+        if (getColor(moving) == PieceColor::White) {
+            clear(MoveGenerator::CASTLE_WHITE_KING | MoveGenerator::CASTLE_WHITE_QUEEN);
+        } else {
+            clear(MoveGenerator::CASTLE_BLACK_KING | MoveGenerator::CASTLE_BLACK_QUEEN);
+        }
+    }
+
+    if (getType(moving) == PieceType::R) {
+        if (getColor(moving) == PieceColor::White) {
+            if (fromSquare == 7 * 8 + 7) { clear(MoveGenerator::CASTLE_WHITE_KING); }
+            if (fromSquare == 7 * 8 + 0) { clear(MoveGenerator::CASTLE_WHITE_QUEEN); }
+        } else {
+            if (fromSquare == 0 * 8 + 7) { clear(MoveGenerator::CASTLE_BLACK_KING); }
+            if (fromSquare == 0 * 8 + 0) { clear(MoveGenerator::CASTLE_BLACK_QUEEN); }
+        }
+    }
+
+    if (getType(captured) == PieceType::R) {
+        if (getColor(captured) == PieceColor::White) {
+            if (toSquare == 7 * 8 + 7) { clear(MoveGenerator::CASTLE_WHITE_KING); }
+            if (toSquare == 7 * 8 + 0) { clear(MoveGenerator::CASTLE_WHITE_QUEEN); }
+        } else if (getColor(captured) == PieceColor::Black) {
+            if (toSquare == 0 * 8 + 7) { clear(MoveGenerator::CASTLE_BLACK_KING); }
+            if (toSquare == 0 * 8 + 0) { clear(MoveGenerator::CASTLE_BLACK_QUEEN); }
+        }
+    }
 }

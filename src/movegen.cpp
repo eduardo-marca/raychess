@@ -184,7 +184,61 @@ Bitboard MoveGenerator::generatePawnPushes(int square, PieceColor color, Bitboar
     return pushes;
 }
 
-std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor color) {
+Bitboard MoveGenerator::generateAttacks(const Board& board, PieceColor color) {
+    Bitboard occ_all = 0;
+    for (int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            Piece p = board.get_piece(r, c);
+            if (!isNone(p)) {
+                occ_all = occ_all + bit_at(r * 8 + c) - (occ_all & bit_at(r * 8 + c));
+            }
+        }
+    }
+
+    Bitboard attacks = 0;
+    for (int sq = 0; sq < 64; ++sq) {
+        int r = row_of(sq);
+        int c = col_of(sq);
+        Piece p = board.get_piece(r, c);
+        if (isNone(p)) { continue; }
+        if (getColor(p) != color) { continue; }
+
+        PieceType t = getType(p);
+        switch (t) {
+            case PieceType::P: {
+                attacks |= generatePawnAttacks(sq, color);
+                break;
+            }
+            case PieceType::N: {
+                attacks |= knight_attacks[sq];
+                break;
+            }
+            case PieceType::B: {
+                attacks |= generateBishopMoves(sq, occ_all);
+                break;
+            }
+            case PieceType::R: {
+                attacks |= generateRookMoves(sq, occ_all);
+                break;
+            }
+            case PieceType::Q: {
+                Bitboard bmask = generateBishopMoves(sq, occ_all);
+                Bitboard rmask = generateRookMoves(sq, occ_all);
+                attacks |= bmask + rmask - (bmask & rmask);
+                break;
+            }
+            case PieceType::K: {
+                attacks |= king_attacks[sq];
+                break;
+            }
+            default: { break; }
+        }
+    }
+
+    return attacks;
+}
+
+std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor color, int castlingRights) {
     static bool tables_initialized = false;
     if (!tables_initialized) {
         init_attack_tables(knight_attacks, king_attacks);
@@ -340,6 +394,64 @@ std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor co
                 break;
             }
             default: { break; }
+        }
+    }
+
+    Bitboard opp_attacks = generateAttacks(board, (color == PieceColor::White) ? PieceColor::Black : PieceColor::White);
+
+    auto add_castle = [&](int from, int to) {
+        Move m{};
+        m.from = from;
+        m.to = to;
+        m.isCheck = false;
+        m.isCapture = false;
+        m.isAttack = false;
+        m.isCastling = true;
+        m.isEnPassant = false;
+        m.isPromotion = false;
+        m.promotionPiece = Piece::None;
+        moves.push_back(m);
+    };
+
+    if (color == PieceColor::White) {
+        int kingSq = 7 * 8 + 4;
+        if (board.get_piece(7, 4) == Piece::WK) {
+            if (castlingRights & CASTLE_WHITE_KING) {
+                bool empty = isNone(board.get_piece(7, 5)) && isNone(board.get_piece(7, 6));
+                bool rookOk = board.get_piece(7, 7) == Piece::WR;
+                bool safe = (opp_attacks & (bit_at(kingSq) | bit_at(7 * 8 + 5) | bit_at(7 * 8 + 6))) == 0;
+                if (empty && rookOk && safe) {
+                    add_castle(kingSq, 7 * 8 + 6);
+                }
+            }
+            if (castlingRights & CASTLE_WHITE_QUEEN) {
+                bool empty = isNone(board.get_piece(7, 1)) && isNone(board.get_piece(7, 2)) && isNone(board.get_piece(7, 3));
+                bool rookOk = board.get_piece(7, 0) == Piece::WR;
+                bool safe = (opp_attacks & (bit_at(kingSq) | bit_at(7 * 8 + 3) | bit_at(7 * 8 + 2))) == 0;
+                if (empty && rookOk && safe) {
+                    add_castle(kingSq, 7 * 8 + 2);
+                }
+            }
+        }
+    } else {
+        int kingSq = 0 * 8 + 4;
+        if (board.get_piece(0, 4) == Piece::BK) {
+            if (castlingRights & CASTLE_BLACK_KING) {
+                bool empty = isNone(board.get_piece(0, 5)) && isNone(board.get_piece(0, 6));
+                bool rookOk = board.get_piece(0, 7) == Piece::BR;
+                bool safe = (opp_attacks & (bit_at(kingSq) | bit_at(0 * 8 + 5) | bit_at(0 * 8 + 6))) == 0;
+                if (empty && rookOk && safe) {
+                    add_castle(kingSq, 0 * 8 + 6);
+                }
+            }
+            if (castlingRights & CASTLE_BLACK_QUEEN) {
+                bool empty = isNone(board.get_piece(0, 1)) && isNone(board.get_piece(0, 2)) && isNone(board.get_piece(0, 3));
+                bool rookOk = board.get_piece(0, 0) == Piece::BR;
+                bool safe = (opp_attacks & (bit_at(kingSq) | bit_at(0 * 8 + 3) | bit_at(0 * 8 + 2))) == 0;
+                if (empty && rookOk && safe) {
+                    add_castle(kingSq, 0 * 8 + 2);
+                }
+            }
         }
     }
 

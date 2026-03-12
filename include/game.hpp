@@ -17,12 +17,14 @@ private:
     MoveGenerator movegen;
     std::vector<Move> legalMoves;
     std::vector<Move> selectedMoves;
+    int castlingRights;
 
     int square_from_mouse(Vector2 mouse) const;
     bool attempt_move(int fromSquare, int toSquare);
     void refresh_legal_moves();
     void refresh_selected_moves();
     const Move* find_legal_move(int fromSquare, int toSquare) const;
+    void update_castling_rights(int fromSquare, int toSquare, Piece moving, Piece captured);
 
 public:
     Board board;
