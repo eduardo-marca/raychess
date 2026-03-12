@@ -1,23 +1,46 @@
 #pragma once
 
-enum Piece {
+#include <cstdint>
+
+enum class Piece : std::uint8_t {
     WK, WQ, WB, WN, WR, WP,
     BK, BQ, BB, BN, BR, BP,
-    NPIECE
+    None
 };
 
-enum PieceType {
-    K, Q, B, N, R, P, NTYPE
+enum class PieceType : std::uint8_t {
+    K, Q, B, N, R, P, None
 };
 
-enum PieceColor {
-    WT, BL, NCOLOR
+enum class PieceColor : std::uint8_t {
+    White, Black, None
 };
 
-PieceType inline getType(Piece piece) {
-    return (PieceType) (piece == NPIECE ? NTYPE : (piece % 6));
+static constexpr std::uint8_t PIECES_PER_COLOR = 6;
+
+constexpr inline bool isNone(Piece piece) {
+    return piece == Piece::None;
 }
 
-PieceColor inline getColor(Piece piece) {
-    return (PieceColor) (piece / 6);
+constexpr inline PieceType getType(Piece piece) {
+    return isNone(piece)
+        ? PieceType::None
+        : static_cast<PieceType>(static_cast<std::uint8_t>(piece) % PIECES_PER_COLOR);
+}
+
+constexpr inline PieceColor getColor(Piece piece) {
+    return isNone(piece)
+        ? PieceColor::None
+        : static_cast<PieceColor>(static_cast<std::uint8_t>(piece) / PIECES_PER_COLOR);
+}
+
+constexpr inline Piece makePiece(PieceColor color, PieceType type) {
+    if (color == PieceColor::None || type == PieceType::None) {
+        return Piece::None;
+    }
+
+    return static_cast<Piece>(
+        static_cast<std::uint8_t>(color) * PIECES_PER_COLOR
+        + static_cast<std::uint8_t>(type)
+    );
 }

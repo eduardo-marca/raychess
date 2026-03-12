@@ -23,8 +23,7 @@ void Renderer::renderGame(Game &game) {
     renderBoard(game.board);
 }
 
-void Renderer::renderBoard(Board &board)
-{
+void Renderer::renderBoard(Board &board) {
     // Render board squares
     for(int row = 0; row < 8; row++) {
         for(int col = 0; col < 8; col++) {
@@ -38,12 +37,14 @@ void Renderer::renderBoard(Board &board)
     for(int row = 0; row < 8; row++) {
         for(int col = 0; col < 8; col++) {
             Piece piece = board.get_piece(row, col);
-            if(piece == NPIECE) continue;
+            if (isNone(piece)) continue;
 
             PieceType type = getType(piece);
             PieceColor color = getColor(piece);
+            int typeIndex = static_cast<int>(type);
+            int colorIndex = static_cast<int>(color);
             Vector2 pos = { (float) col * square_size, (float) row * square_size };
-            Rectangle src = piecesRecs[type][color];
+            Rectangle src = piecesRecs[typeIndex][colorIndex];
             Rectangle dst = { pos.x, pos.y, (float)square_size, (float)square_size };
             Vector2 origin = { 0.0f, 0.0f };
             DrawTexturePro(piecesTextures, src, dst, origin, 0.0f, WHITE);

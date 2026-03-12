@@ -2,14 +2,14 @@
 
 Board::Board() {
     static const Piece initial[8][8] = {
-        {BR, BN, BB, BQ, BK, BB, BN, BR},
-        {BP, BP, BP, BP, BP, BP, BP, BP},
-        {NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE},
-        {NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE},
-        {NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE},
-        {NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE, NPIECE},
-        {WP, WP, WP, WP, WP, WP, WP, WP},
-        {WR, WN, WB, WQ, WK, WB, WN, WR}
+        {Piece::BR, Piece::BN, Piece::BB, Piece::BQ, Piece::BK, Piece::BB, Piece::BN, Piece::BR},
+        {Piece::BP, Piece::BP, Piece::BP, Piece::BP, Piece::BP, Piece::BP, Piece::BP, Piece::BP},
+        {Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None},
+        {Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None},
+        {Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None},
+        {Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None, Piece::None},
+        {Piece::WP, Piece::WP, Piece::WP, Piece::WP, Piece::WP, Piece::WP, Piece::WP, Piece::WP},
+        {Piece::WR, Piece::WN, Piece::WB, Piece::WQ, Piece::WK, Piece::WB, Piece::WN, Piece::WR}
     };
 
     for (int row = 0; row < 8; row++) {
@@ -25,20 +25,20 @@ Piece Board::get_piece(int row, int col) {
     for (int color = 0; color < 2; color++) {
         for (int type = 0; type < 6; type++) {
             if (bitboards[color][type] & mask) {
-                return (Piece)(color * 6 + type);
+                return makePiece(static_cast<PieceColor>(color), static_cast<PieceType>(type));
             }
         }
     }
 
-    return NPIECE;
+    return Piece::None;
 }
 
 void Board::set_piece(Piece piece, int row, int col) {
-    if (piece == NPIECE) {
+    if (isNone(piece)) {
         return;
     }
 
-    int color = (int)getColor(piece);
-    int type = (int)getType(piece);
+    int color = static_cast<int>(getColor(piece));
+    int type = static_cast<int>(getType(piece));
     bitboards[color][type] |= square_mask(row, col);
 }
