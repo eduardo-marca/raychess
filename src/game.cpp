@@ -10,6 +10,8 @@ Game::Game() {
 }
 
 void Game::update() {
+    refresh_legal_moves();
+
     Vector2 mouse = GetMousePosition();
     int hovered = square_from_mouse(mouse);
 
@@ -29,6 +31,7 @@ void Game::update() {
             draggingSquare = -1;
         }
 
+        refresh_selected_moves();
         return;
     }
 
@@ -66,6 +69,8 @@ void Game::update() {
             selectedSquare = -1;
         }
     }
+
+    refresh_selected_moves();
 }
 
 int Game::getSelectedSquare() const {
@@ -88,6 +93,10 @@ PieceColor Game::getSideToMove() const {
     return sideToMove;
 }
 
+const std::vector<Move>& Game::getSelectedMoves() const {
+    return selectedMoves;
+}
+
 int Game::square_from_mouse(Vector2 mouse) const {
     if (mouse.x < 0 || mouse.y < 0 || mouse.x >= screenWidth || mouse.y >= screenHeight) {
         return -1;
@@ -103,6 +112,11 @@ bool Game::attempt_move(int fromSquare, int toSquare) {
         return false;
     }
 
+    const Move* move = find_legal_move(fromSquare, toSquare);
+    if (!move) {
+        return false;
+    }
+
     int fromRow = fromSquare / 8;
     int fromCol = fromSquare % 8;
     int toRow = toSquare / 8;
@@ -113,12 +127,59 @@ bool Game::attempt_move(int fromSquare, int toSquare) {
         return false;
     }
 
-    Piece target = board.get_piece(toRow, toCol);
-    if (!isNone(target) && getColor(target) == sideToMove) {
-        return false;
-    }
-
-    board.move_piece(fromRow, fromCol, toRow, toCol);
+    Piece promotion = move->isPromotion ? move->promotionPiece : Piece::None;
+    board.move_piece(fromRow, fromCol, toRow, toCol, promotion);
     sideToMove = (sideToMove == PieceColor::White) ? PieceColor::Black : PieceColor::White;
     return true;
+}
+
+void Game::refresh_legal_moves() {
+    legalMoves = movegen.generateMoves(board, sideToMove);
+}
+
+void Game::refresh_selected_moves() {
+    selectedMoves.clear();
+    if (selectedSquare == -1) {
+        return;
+    }
+
+    std::array<int, 64> indexByTarget;
+    indexByTarget.fill(-1);
+
+    Piece queen = makePiece(sideToMove, PieceType::Q);
+
+    for (const Move& move : legalMoves) {
+        if (move.from != selectedSquare) {
+            continue;
+        }
+
+        int& slot = indexByTarget[move.to];
+        if (slot == -1) {
+            selectedMoves.push_back(move);
+            slot = static_cast<int>(selectedMoves.size() - 1);
+        } else if (move.isPromotion && move.promotionPiece == queen) {
+            selectedMoves[slot] = move;
+        }
+    }
+}
+
+const Move* Game::find_legal_move(int fromSquare, int toSquare) const {
+    const Move* fallback = nullptr;
+    Piece queen = makePiece(sideToMove, PieceType::Q);
+
+    for (const Move& move : legalMoves) {
+        if (move.from != fromSquare || move.to != toSquare) {
+            continue;
+        }
+
+        if (!fallback) {
+            fallback = &move;
+        }
+
+        if (move.isPromotion && move.promotionPiece == queen) {
+            return &move;
+        }
+    }
+
+    return fallback;
 }

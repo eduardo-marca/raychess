@@ -43,6 +43,23 @@ void Renderer::renderBoard(Game &game) {
         DrawRectangle(selCol * square_size, selRow * square_size, square_size, square_size, highlight);
     }
 
+    const std::vector<Move>& selectedMoves = game.getSelectedMoves();
+    Color moveDot = { 30, 144, 255, 140 };
+    Color captureOutline = { 200, 60, 60, 180 };
+
+    for (const Move& move : selectedMoves) {
+        if (move.isCapture) {
+            continue;
+        }
+        int row = move.to / 8;
+        int col = move.to % 8;
+        Vector2 center = {
+            col * square_size + square_size * 0.5f,
+            row * square_size + square_size * 0.5f
+        };
+        DrawCircleV(center, square_size * 0.18f, moveDot);
+    }
+
     // Render board pieces
     bool dragging = game.isDragging();
     int draggingSquare = dragging ? game.getDraggingSquare() : -1;
@@ -66,6 +83,21 @@ void Renderer::renderBoard(Game &game) {
             Vector2 origin = { 0.0f, 0.0f };
             DrawTexturePro(piecesTextures, src, dst, origin, 0.0f, WHITE);
         }
+    }
+
+    for (const Move& move : selectedMoves) {
+        if (!move.isCapture) {
+            continue;
+        }
+        int row = move.to / 8;
+        int col = move.to % 8;
+        Rectangle rect = {
+            col * square_size + 4.0f,
+            row * square_size + 4.0f,
+            square_size - 8.0f,
+            square_size - 8.0f
+        };
+        DrawRectangleLinesEx(rect, 3.0f, captureOutline);
     }
 
     if (dragging && draggingSquare != -1) {

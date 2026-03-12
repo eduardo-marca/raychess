@@ -33,7 +33,7 @@ Piece Board::get_piece(int row, int col) const {
     return Piece::None;
 }
 
-void Board::move_piece(int from_row, int from_col, int to_row, int to_col) {
+void Board::move_piece(int from_row, int from_col, int to_row, int to_col, Piece promotionPiece) {
     if (from_row == to_row && from_col == to_col) {
         return;
     }
@@ -45,7 +45,8 @@ void Board::move_piece(int from_row, int from_col, int to_row, int to_col) {
 
     clear_square(from_row, from_col);
     clear_square(to_row, to_col);
-    set_piece(piece, to_row, to_col);
+    Piece finalPiece = isNone(promotionPiece) ? piece : promotionPiece;
+    set_piece(finalPiece, to_row, to_col);
 }
 
 void Board::set_piece(Piece piece, int row, int col) {

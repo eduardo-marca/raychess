@@ -3,8 +3,6 @@
 #include <consts.hpp>
 #include <game.hpp>
 #include <renderer.hpp>
-#include <movegen.hpp>
-#include <iostream>
 
 int main(void) {
 
@@ -14,7 +12,6 @@ int main(void) {
     
     Game game;
     Renderer renderer;
-    MoveGenerator movegen;
 
     while (!WindowShouldClose()) {
         game.update();
