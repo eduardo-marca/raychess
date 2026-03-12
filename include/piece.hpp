@@ -44,3 +44,15 @@ constexpr inline Piece makePiece(PieceColor color, PieceType type) {
         + static_cast<std::uint8_t>(type)
     );
 }
+
+constexpr inline int to_index(Piece piece) {
+    return static_cast<int>(piece);
+}
+
+constexpr inline int to_index(PieceType type) {
+    return static_cast<int>(type);
+}
+
+constexpr inline int to_index(PieceColor color) {
+    return static_cast<int>(color);
+}

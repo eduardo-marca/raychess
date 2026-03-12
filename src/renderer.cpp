@@ -41,8 +41,8 @@ void Renderer::renderBoard(Board &board) {
 
             PieceType type = getType(piece);
             PieceColor color = getColor(piece);
-            int typeIndex = static_cast<int>(type);
-            int colorIndex = static_cast<int>(color);
+            int typeIndex = to_index(type);
+            int colorIndex = to_index(color);
             Vector2 pos = { (float) col * square_size, (float) row * square_size };
             Rectangle src = piecesRecs[typeIndex][colorIndex];
             Rectangle dst = { pos.x, pos.y, (float)square_size, (float)square_size };

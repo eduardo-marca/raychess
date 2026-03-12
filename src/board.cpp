@@ -38,7 +38,7 @@ void Board::set_piece(Piece piece, int row, int col) {
         return;
     }
 
-    int color = static_cast<int>(getColor(piece));
-    int type = static_cast<int>(getType(piece));
+    int color = to_index(getColor(piece));
+    int type = to_index(getType(piece));
     bitboards[color][type] |= square_mask(row, col);
 }
