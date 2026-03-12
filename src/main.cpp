@@ -14,6 +14,8 @@ int main(void) {
     Renderer renderer;
 
     while (!WindowShouldClose()) {
+        game.update();
+
         BeginDrawing();
 
             ClearBackground(RAYWHITE);

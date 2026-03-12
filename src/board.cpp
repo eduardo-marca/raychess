@@ -33,6 +33,21 @@ Piece Board::get_piece(int row, int col) {
     return Piece::None;
 }
 
+void Board::move_piece(int from_row, int from_col, int to_row, int to_col) {
+    if (from_row == to_row && from_col == to_col) {
+        return;
+    }
+
+    Piece piece = get_piece(from_row, from_col);
+    if (isNone(piece)) {
+        return;
+    }
+
+    clear_square(from_row, from_col);
+    clear_square(to_row, to_col);
+    set_piece(piece, to_row, to_col);
+}
+
 void Board::set_piece(Piece piece, int row, int col) {
     if (isNone(piece)) {
         return;
@@ -41,4 +56,13 @@ void Board::set_piece(Piece piece, int row, int col) {
     int color = to_index(getColor(piece));
     int type = to_index(getType(piece));
     bitboards[color][type] |= square_mask(row, col);
+}
+
+void Board::clear_square(int row, int col) {
+    Bitboard mask = square_mask(row, col);
+    for (int color = 0; color < 2; color++) {
+        for (int type = 0; type < 6; type++) {
+            bitboards[color][type] &= ~mask;
+        }
+    }
 }

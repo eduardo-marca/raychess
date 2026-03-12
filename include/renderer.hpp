@@ -13,5 +13,5 @@ class Renderer {
         Renderer();
 
         void renderGame(Game& game);
-        void renderBoard(Board& board);
+        void renderBoard(Game& game);
 };

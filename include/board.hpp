@@ -16,10 +16,12 @@ class Board {
             return Bitboard(1) << square_index(row, col);
         }
 
+        void clear_square(int row, int col);
         void set_piece(Piece piece, int row, int col);
 
     public:
         Board();
 
         Piece get_piece(int row, int col);
+        void move_piece(int from_row, int from_col, int to_row, int to_col);
 };

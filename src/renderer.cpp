@@ -20,10 +20,12 @@ Renderer::Renderer() {
 }
 
 void Renderer::renderGame(Game &game) {
-    renderBoard(game.board);
+    renderBoard(game);
 }
 
-void Renderer::renderBoard(Board &board) {
+void Renderer::renderBoard(Game &game) {
+    Board &board = game.board;
+
     // Render board squares
     for(int row = 0; row < 8; row++) {
         for(int col = 0; col < 8; col++) {
@@ -33,9 +35,24 @@ void Renderer::renderBoard(Board &board) {
         }
     }
 
+    int selectedSquare = game.getSelectedSquare();
+    if (selectedSquare != -1) {
+        int selRow = selectedSquare / 8;
+        int selCol = selectedSquare % 8;
+        Color highlight = { 255, 255, 0, 80 };
+        DrawRectangle(selCol * square_size, selRow * square_size, square_size, square_size, highlight);
+    }
+
     // Render board pieces
+    bool dragging = game.isDragging();
+    int draggingSquare = dragging ? game.getDraggingSquare() : -1;
+
     for(int row = 0; row < 8; row++) {
         for(int col = 0; col < 8; col++) {
+            if (dragging && (row * 8 + col) == draggingSquare) {
+                continue;
+            }
+
             Piece piece = board.get_piece(row, col);
             if (isNone(piece)) continue;
 
@@ -46,6 +63,28 @@ void Renderer::renderBoard(Board &board) {
             Vector2 pos = { (float) col * square_size, (float) row * square_size };
             Rectangle src = piecesRecs[typeIndex][colorIndex];
             Rectangle dst = { pos.x, pos.y, (float)square_size, (float)square_size };
+            Vector2 origin = { 0.0f, 0.0f };
+            DrawTexturePro(piecesTextures, src, dst, origin, 0.0f, WHITE);
+        }
+    }
+
+    if (dragging && draggingSquare != -1) {
+        int row = draggingSquare / 8;
+        int col = draggingSquare % 8;
+        Piece piece = board.get_piece(row, col);
+        if (!isNone(piece)) {
+            PieceType type = getType(piece);
+            PieceColor color = getColor(piece);
+            int typeIndex = to_index(type);
+            int colorIndex = to_index(color);
+            Rectangle src = piecesRecs[typeIndex][colorIndex];
+            Vector2 dragPos = game.getDragPosition();
+            Rectangle dst = {
+                dragPos.x - square_size * 0.5f,
+                dragPos.y - square_size * 0.5f,
+                (float)square_size,
+                (float)square_size
+            };
             Vector2 origin = { 0.0f, 0.0f };
             DrawTexturePro(piecesTextures, src, dst, origin, 0.0f, WHITE);
         }
