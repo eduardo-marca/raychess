@@ -1,7 +1,7 @@
 #pragma once
 
-#include <board.hpp>
 #include <movegen.hpp>
+#include <position.hpp>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -9,21 +9,11 @@
 
 class Tester {
 private:
-    struct Position {
-        Board board;
-        PieceColor sideToMove;
-        int castlingRights;
-        int enPassantSquare;
-    };
-
     MoveGenerator movegen;
     Position rootPosition;
 
-    std::vector<Move> generateMoves(const Position& position);
-    void applyMove(Position& position, const Move& move);
-    void updateCastlingRights(Position& position, int fromSquare, int toSquare, Piece moving, Piece captured);
     std::uint64_t perft(const Position& position, int depth);
-    std::string formatMove(const Move& move);
+    static std::string formatMove(const Move& move);
 
 public:
     Tester();

@@ -6,12 +6,6 @@ Game::Game() {
     dragging = false;
     draggingSquare = -1;
     dragPosition = { 0.0f, 0.0f };
-    sideToMove = PieceColor::White;
-    castlingRights = MoveGenerator::CASTLE_WHITE_KING
-        | MoveGenerator::CASTLE_WHITE_QUEEN
-        | MoveGenerator::CASTLE_BLACK_KING
-        | MoveGenerator::CASTLE_BLACK_QUEEN;
-    enPassantSquare = -1;
 }
 
 void Game::update() {
@@ -48,10 +42,10 @@ void Game::update() {
 
         int row = hovered / 8;
         int col = hovered % 8;
-        Piece clicked = board.get_piece(row, col);
+        Piece clicked = position.board.get_piece(row, col);
 
         if (selectedSquare != -1 && hovered != selectedSquare) {
-            if (!isNone(clicked) && getColor(clicked) == sideToMove) {
+            if (!isNone(clicked) && getColor(clicked) == position.sideToMove) {
                 selectedSquare = hovered;
                 dragging = true;
                 draggingSquare = hovered;
@@ -65,7 +59,7 @@ void Game::update() {
             return;
         }
 
-        if (!isNone(clicked) && getColor(clicked) == sideToMove) {
+        if (!isNone(clicked) && getColor(clicked) == position.sideToMove) {
             selectedSquare = hovered;
             dragging = true;
             draggingSquare = hovered;
@@ -95,7 +89,11 @@ Vector2 Game::getDragPosition() const {
 }
 
 PieceColor Game::getSideToMove() const {
-    return sideToMove;
+    return position.sideToMove;
+}
+
+const Board& Game::getBoard() const {
+    return position.board;
 }
 
 const std::vector<Move>& Game::getSelectedMoves() const {
@@ -124,52 +122,16 @@ bool Game::attempt_move(int fromSquare, int toSquare) {
 
     int fromRow = fromSquare / 8;
     int fromCol = fromSquare % 8;
-    int toRow = toSquare / 8;
-    int toCol = toSquare % 8;
-
-    Piece moving = board.get_piece(fromRow, fromCol);
-    if (isNone(moving) || getColor(moving) != sideToMove) {
+    Piece moving = position.board.get_piece(fromRow, fromCol);
+    if (isNone(moving) || getColor(moving) != position.sideToMove) {
         return false;
     }
 
-    Piece target = board.get_piece(toRow, toCol);
-    update_castling_rights(fromSquare, toSquare, moving, target);
-
-    int nextEnPassantSquare = -1;
-    if (getType(moving) == PieceType::P && (fromRow - toRow == 2 || toRow - fromRow == 2)) {
-        nextEnPassantSquare = ((fromRow + toRow) / 2) * 8 + fromCol;
-    }
-
-    if (move->isCastling) {
-        board.move_piece(fromRow, fromCol, toRow, toCol);
-        if (sideToMove == PieceColor::White) {
-            if (toSquare == 7 * 8 + 6) {
-                board.move_piece(7, 7, 7, 5);
-            } else {
-                board.move_piece(7, 0, 7, 3);
-            }
-        } else {
-            if (toSquare == 0 * 8 + 6) {
-                board.move_piece(0, 7, 0, 5);
-            } else {
-                board.move_piece(0, 0, 0, 3);
-            }
-        }
-    } else if (move->isEnPassant) {
-        board.remove_piece(fromRow, toCol);
-        board.move_piece(fromRow, fromCol, toRow, toCol);
-    } else {
-        Piece promotion = move->isPromotion ? move->promotionPiece : Piece::None;
-        board.move_piece(fromRow, fromCol, toRow, toCol, promotion);
-    }
-
-    enPassantSquare = nextEnPassantSquare;
-    sideToMove = (sideToMove == PieceColor::White) ? PieceColor::Black : PieceColor::White;
-    return true;
+    return position.applyMove(*move);
 }
 
 void Game::refresh_legal_moves() {
-    legalMoves = movegen.generateMoves(board, sideToMove, castlingRights, enPassantSquare);
+    legalMoves = position.generateLegalMoves(movegen);
 }
 
 void Game::refresh_selected_moves() {
@@ -181,7 +143,7 @@ void Game::refresh_selected_moves() {
     std::array<int, 64> indexByTarget;
     indexByTarget.fill(-1);
 
-    Piece queen = makePiece(sideToMove, PieceType::Q);
+    Piece queen = makePiece(position.sideToMove, PieceType::Q);
 
     for (const Move& move : legalMoves) {
         if (move.from != selectedSquare) {
@@ -200,7 +162,7 @@ void Game::refresh_selected_moves() {
 
 const Move* Game::find_legal_move(int fromSquare, int toSquare) const {
     const Move* fallback = nullptr;
-    Piece queen = makePiece(sideToMove, PieceType::Q);
+    Piece queen = makePiece(position.sideToMove, PieceType::Q);
 
     for (const Move& move : legalMoves) {
         if (move.from != fromSquare || move.to != toSquare) {
@@ -217,36 +179,4 @@ const Move* Game::find_legal_move(int fromSquare, int toSquare) const {
     }
 
     return fallback;
-}
-
-void Game::update_castling_rights(int fromSquare, int toSquare, Piece moving, Piece captured) {
-    auto clear = [&](int mask) { castlingRights &= ~mask; };
-
-    if (getType(moving) == PieceType::K) {
-        if (getColor(moving) == PieceColor::White) {
-            clear(MoveGenerator::CASTLE_WHITE_KING | MoveGenerator::CASTLE_WHITE_QUEEN);
-        } else {
-            clear(MoveGenerator::CASTLE_BLACK_KING | MoveGenerator::CASTLE_BLACK_QUEEN);
-        }
-    }
-
-    if (getType(moving) == PieceType::R) {
-        if (getColor(moving) == PieceColor::White) {
-            if (fromSquare == 7 * 8 + 7) { clear(MoveGenerator::CASTLE_WHITE_KING); }
-            if (fromSquare == 7 * 8 + 0) { clear(MoveGenerator::CASTLE_WHITE_QUEEN); }
-        } else {
-            if (fromSquare == 0 * 8 + 7) { clear(MoveGenerator::CASTLE_BLACK_KING); }
-            if (fromSquare == 0 * 8 + 0) { clear(MoveGenerator::CASTLE_BLACK_QUEEN); }
-        }
-    }
-
-    if (getType(captured) == PieceType::R) {
-        if (getColor(captured) == PieceColor::White) {
-            if (toSquare == 7 * 8 + 7) { clear(MoveGenerator::CASTLE_WHITE_KING); }
-            if (toSquare == 7 * 8 + 0) { clear(MoveGenerator::CASTLE_WHITE_QUEEN); }
-        } else if (getColor(captured) == PieceColor::Black) {
-            if (toSquare == 0 * 8 + 7) { clear(MoveGenerator::CASTLE_BLACK_KING); }
-            if (toSquare == 0 * 8 + 0) { clear(MoveGenerator::CASTLE_BLACK_QUEEN); }
-        }
-    }
 }

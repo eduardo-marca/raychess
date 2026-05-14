@@ -1,8 +1,8 @@
 #pragma once
 
-#include <board.hpp>
 #include <movegen.hpp>
 #include <move.hpp>
+#include <position.hpp>
 #include <raylib.h>
 #include <vector>
 #include <array>
@@ -13,23 +13,18 @@ private:
     bool dragging;
     int draggingSquare;
     Vector2 dragPosition;
-    PieceColor sideToMove;
+    Position position;
     MoveGenerator movegen;
     std::vector<Move> legalMoves;
     std::vector<Move> selectedMoves;
-    int castlingRights;
-    int enPassantSquare;
 
     int square_from_mouse(Vector2 mouse) const;
     bool attempt_move(int fromSquare, int toSquare);
     void refresh_legal_moves();
     void refresh_selected_moves();
     const Move* find_legal_move(int fromSquare, int toSquare) const;
-    void update_castling_rights(int fromSquare, int toSquare, Piece moving, Piece captured);
 
 public:
-    Board board;
-
     Game();
 
     void update();
@@ -39,5 +34,6 @@ public:
     int getDraggingSquare() const;
     Vector2 getDragPosition() const;
     PieceColor getSideToMove() const;
+    const Board& getBoard() const;
     const std::vector<Move>& getSelectedMoves() const;
 };

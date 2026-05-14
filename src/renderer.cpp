@@ -24,7 +24,7 @@ void Renderer::renderGame(Game &game) {
 }
 
 void Renderer::renderBoard(Game &game) {
-    Board &board = game.board;
+    const Board &board = game.getBoard();
 
     // Render board squares
     for(int row = 0; row < 8; row++) {
