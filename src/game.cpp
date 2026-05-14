@@ -11,6 +11,7 @@ Game::Game() {
         | MoveGenerator::CASTLE_WHITE_QUEEN
         | MoveGenerator::CASTLE_BLACK_KING
         | MoveGenerator::CASTLE_BLACK_QUEEN;
+    enPassantSquare = -1;
 }
 
 void Game::update() {
@@ -134,6 +135,11 @@ bool Game::attempt_move(int fromSquare, int toSquare) {
     Piece target = board.get_piece(toRow, toCol);
     update_castling_rights(fromSquare, toSquare, moving, target);
 
+    int nextEnPassantSquare = -1;
+    if (getType(moving) == PieceType::P && (fromRow - toRow == 2 || toRow - fromRow == 2)) {
+        nextEnPassantSquare = ((fromRow + toRow) / 2) * 8 + fromCol;
+    }
+
     if (move->isCastling) {
         board.move_piece(fromRow, fromCol, toRow, toCol);
         if (sideToMove == PieceColor::White) {
@@ -149,16 +155,21 @@ bool Game::attempt_move(int fromSquare, int toSquare) {
                 board.move_piece(0, 0, 0, 3);
             }
         }
+    } else if (move->isEnPassant) {
+        board.remove_piece(fromRow, toCol);
+        board.move_piece(fromRow, fromCol, toRow, toCol);
     } else {
         Piece promotion = move->isPromotion ? move->promotionPiece : Piece::None;
         board.move_piece(fromRow, fromCol, toRow, toCol, promotion);
     }
+
+    enPassantSquare = nextEnPassantSquare;
     sideToMove = (sideToMove == PieceColor::White) ? PieceColor::Black : PieceColor::White;
     return true;
 }
 
 void Game::refresh_legal_moves() {
-    legalMoves = movegen.generateMoves(board, sideToMove, castlingRights);
+    legalMoves = movegen.generateMoves(board, sideToMove, castlingRights, enPassantSquare);
 }
 
 void Game::refresh_selected_moves() {

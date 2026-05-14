@@ -49,6 +49,10 @@ void Board::move_piece(int from_row, int from_col, int to_row, int to_col, Piece
     set_piece(finalPiece, to_row, to_col);
 }
 
+void Board::remove_piece(int row, int col) {
+    clear_square(row, col);
+}
+
 void Board::set_piece(Piece piece, int row, int col) {
     if (isNone(piece)) {
         return;

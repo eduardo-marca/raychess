@@ -14,7 +14,7 @@ public:
     static constexpr int CASTLE_BLACK_KING = 1 << 2;
     static constexpr int CASTLE_BLACK_QUEEN = 1 << 3;
 
-    std::vector<Move> generateMoves(const Board& board, PieceColor color, int castlingRights);
+    std::vector<Move> generateMoves(const Board& board, PieceColor color, int castlingRights, int enPassantSquare);
 
 private:
     // Lookup tables (pre-computed)

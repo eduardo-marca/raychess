@@ -18,6 +18,7 @@ private:
     std::vector<Move> legalMoves;
     std::vector<Move> selectedMoves;
     int castlingRights;
+    int enPassantSquare;
 
     int square_from_mouse(Vector2 mouse) const;
     bool attempt_move(int fromSquare, int toSquare);

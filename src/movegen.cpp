@@ -296,6 +296,10 @@ void MoveGenerator::applyMove(Board& board, const Move& move, PieceColor color) 
         return;
     }
 
+    if (move.isEnPassant) {
+        board.remove_piece(fromRow, toCol);
+    }
+
     Piece promotion = move.isPromotion ? move.promotionPiece : Piece::None;
     board.move_piece(fromRow, fromCol, toRow, toCol, promotion);
 }
@@ -323,7 +327,7 @@ bool MoveGenerator::canCastle(const Board& board, PieceColor color, int from, in
     return !isKingInCheck(finalBoard, color);
 }
 
-std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor color, int castlingRights) {
+std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor color, int castlingRights, int enPassantSquare) {
     initializeAttackTables();
 
     Bitboard occ_white = 0;
@@ -360,6 +364,20 @@ std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor co
         m.isEnPassant = false;
         m.isPromotion = isPromotion;
         m.promotionPiece = promo;
+        moves.push_back(m);
+    };
+
+    auto push_en_passant = [&](int from, int to) {
+        Move m{};
+        m.from = from;
+        m.to = to;
+        m.isCheck = false;
+        m.isCapture = true;
+        m.isAttack = true;
+        m.isCastling = false;
+        m.isEnPassant = true;
+        m.isPromotion = false;
+        m.promotionPiece = Piece::None;
         moves.push_back(m);
     };
 
@@ -408,6 +426,16 @@ std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor co
                         push_move(sq, to, false, false, Piece::None);
                     }
                     b ^= lsb;
+                }
+
+                if (enPassantSquare != -1) {
+                    Bitboard enPassantMask = bit_at(enPassantSquare);
+                    if ((tmp & enPassantMask) != 0 && isNone(board.get_piece(row_of(enPassantSquare), col_of(enPassantSquare)))) {
+                        Piece captured = board.get_piece(r, col_of(enPassantSquare));
+                        if (captured == makePiece((color == PieceColor::White) ? PieceColor::Black : PieceColor::White, PieceType::P)) {
+                            push_en_passant(sq, enPassantSquare);
+                        }
+                    }
                 }
                 break;
             }
