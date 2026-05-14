@@ -9,6 +9,11 @@ A basic chess engine written in C++ with Raylib.
 - Linux: run "make" to compile project and "./bin/RayChess" to run, or "make run" to build and run at the same time. You can use "make clean" to clean up build files.
 
 # Future Improvements
-- En passant
+- Unmake moves.
+- FEN import/export.
+- Game-end detection.
+- Better perft test.
+- Position hash.
+- Move ordering/evaluation.
 - Simple bot.
 - Multithreading for bot and renderization.
