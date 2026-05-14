@@ -21,12 +21,17 @@ private:
     static Bitboard knight_attacks[64];
     static Bitboard king_attacks[64];
 
+    void initializeAttackTables();
     Bitboard generateRookMoves(int square, Bitboard occupied);
     Bitboard generateBishopMoves(int square, Bitboard occupied);
 
     Bitboard generatePawnAttacks(int square, PieceColor color);
     Bitboard generatePawnPushes(int square, PieceColor color, Bitboard occupied);
     Bitboard generateAttacks(const Board& board, PieceColor color);
+    int findKingSquare(const Board& board, PieceColor color);
+    bool isKingInCheck(const Board& board, PieceColor color);
+    void applyMove(Board& board, const Move& move, PieceColor color);
+    bool canCastle(const Board& board, PieceColor color, int from, int to);
 
     // Helper functions
     static inline int square_index(int row, int col) { return row * 8 + col; }

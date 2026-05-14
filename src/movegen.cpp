@@ -53,6 +53,14 @@ void init_attack_tables(Bitboard knight_attacks[64], Bitboard king_attacks[64]) 
 Bitboard MoveGenerator::knight_attacks[64];
 Bitboard MoveGenerator::king_attacks[64];
 
+void MoveGenerator::initializeAttackTables() {
+    static bool tables_initialized = false;
+    if (!tables_initialized) {
+        init_attack_tables(knight_attacks, king_attacks);
+        tables_initialized = true;
+    }
+}
+
 Bitboard MoveGenerator::generateRookMoves(int square, Bitboard occupied) {
     Bitboard moves = 0;
     int r = row_of(square);
@@ -185,6 +193,8 @@ Bitboard MoveGenerator::generatePawnPushes(int square, PieceColor color, Bitboar
 }
 
 Bitboard MoveGenerator::generateAttacks(const Board& board, PieceColor color) {
+    initializeAttackTables();
+
     Bitboard occ_all = 0;
     for (int r = 0; r < 8; ++r) {
         for (int c = 0; c < 8; ++c) {
@@ -238,12 +248,83 @@ Bitboard MoveGenerator::generateAttacks(const Board& board, PieceColor color) {
     return attacks;
 }
 
-std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor color, int castlingRights) {
-    static bool tables_initialized = false;
-    if (!tables_initialized) {
-        init_attack_tables(knight_attacks, king_attacks);
-        tables_initialized = true;
+int MoveGenerator::findKingSquare(const Board& board, PieceColor color) {
+    Piece king = makePiece(color, PieceType::K);
+    for (int sq = 0; sq < 64; ++sq) {
+        int r = row_of(sq);
+        int c = col_of(sq);
+        if (board.get_piece(r, c) == king) {
+            return sq;
+        }
     }
+
+    return -1;
+}
+
+bool MoveGenerator::isKingInCheck(const Board& board, PieceColor color) {
+    int kingSquare = findKingSquare(board, color);
+    if (kingSquare == -1) {
+        return false;
+    }
+
+    PieceColor opponent = (color == PieceColor::White) ? PieceColor::Black : PieceColor::White;
+    Bitboard opponentAttacks = generateAttacks(board, opponent);
+    return (opponentAttacks & bit_at(kingSquare)) != 0;
+}
+
+void MoveGenerator::applyMove(Board& board, const Move& move, PieceColor color) {
+    int fromRow = row_of(move.from);
+    int fromCol = col_of(move.from);
+    int toRow = row_of(move.to);
+    int toCol = col_of(move.to);
+
+    if (move.isCastling) {
+        board.move_piece(fromRow, fromCol, toRow, toCol);
+        if (color == PieceColor::White) {
+            if (move.to == square_index(7, 6)) {
+                board.move_piece(7, 7, 7, 5);
+            } else {
+                board.move_piece(7, 0, 7, 3);
+            }
+        } else {
+            if (move.to == square_index(0, 6)) {
+                board.move_piece(0, 7, 0, 5);
+            } else {
+                board.move_piece(0, 0, 0, 3);
+            }
+        }
+        return;
+    }
+
+    Piece promotion = move.isPromotion ? move.promotionPiece : Piece::None;
+    board.move_piece(fromRow, fromCol, toRow, toCol, promotion);
+}
+
+bool MoveGenerator::canCastle(const Board& board, PieceColor color, int from, int to) {
+    if (isKingInCheck(board, color)) {
+        return false;
+    }
+
+    int row = row_of(from);
+    int step = (to > from) ? 1 : -1;
+
+    Board intermediate = board;
+    intermediate.move_piece(row, col_of(from), row, col_of(from + step));
+    if (isKingInCheck(intermediate, color)) {
+        return false;
+    }
+
+    Board finalBoard = board;
+    Move castleMove{};
+    castleMove.from = from;
+    castleMove.to = to;
+    castleMove.isCastling = true;
+    applyMove(finalBoard, castleMove, color);
+    return !isKingInCheck(finalBoard, color);
+}
+
+std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor color, int castlingRights) {
+    initializeAttackTables();
 
     Bitboard occ_white = 0;
     Bitboard occ_black = 0;
@@ -397,8 +478,6 @@ std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor co
         }
     }
 
-    Bitboard opp_attacks = generateAttacks(board, (color == PieceColor::White) ? PieceColor::Black : PieceColor::White);
-
     auto add_castle = [&](int from, int to) {
         Move m{};
         m.from = from;
@@ -419,16 +498,14 @@ std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor co
             if (castlingRights & CASTLE_WHITE_KING) {
                 bool empty = isNone(board.get_piece(7, 5)) && isNone(board.get_piece(7, 6));
                 bool rookOk = board.get_piece(7, 7) == Piece::WR;
-                bool safe = (opp_attacks & (bit_at(kingSq) | bit_at(7 * 8 + 5) | bit_at(7 * 8 + 6))) == 0;
-                if (empty && rookOk && safe) {
+                if (empty && rookOk && canCastle(board, color, kingSq, 7 * 8 + 6)) {
                     add_castle(kingSq, 7 * 8 + 6);
                 }
             }
             if (castlingRights & CASTLE_WHITE_QUEEN) {
                 bool empty = isNone(board.get_piece(7, 1)) && isNone(board.get_piece(7, 2)) && isNone(board.get_piece(7, 3));
                 bool rookOk = board.get_piece(7, 0) == Piece::WR;
-                bool safe = (opp_attacks & (bit_at(kingSq) | bit_at(7 * 8 + 3) | bit_at(7 * 8 + 2))) == 0;
-                if (empty && rookOk && safe) {
+                if (empty && rookOk && canCastle(board, color, kingSq, 7 * 8 + 2)) {
                     add_castle(kingSq, 7 * 8 + 2);
                 }
             }
@@ -439,21 +516,34 @@ std::vector<Move> MoveGenerator::generateMoves(const Board &board, PieceColor co
             if (castlingRights & CASTLE_BLACK_KING) {
                 bool empty = isNone(board.get_piece(0, 5)) && isNone(board.get_piece(0, 6));
                 bool rookOk = board.get_piece(0, 7) == Piece::BR;
-                bool safe = (opp_attacks & (bit_at(kingSq) | bit_at(0 * 8 + 5) | bit_at(0 * 8 + 6))) == 0;
-                if (empty && rookOk && safe) {
+                if (empty && rookOk && canCastle(board, color, kingSq, 0 * 8 + 6)) {
                     add_castle(kingSq, 0 * 8 + 6);
                 }
             }
             if (castlingRights & CASTLE_BLACK_QUEEN) {
                 bool empty = isNone(board.get_piece(0, 1)) && isNone(board.get_piece(0, 2)) && isNone(board.get_piece(0, 3));
                 bool rookOk = board.get_piece(0, 0) == Piece::BR;
-                bool safe = (opp_attacks & (bit_at(kingSq) | bit_at(0 * 8 + 3) | bit_at(0 * 8 + 2))) == 0;
-                if (empty && rookOk && safe) {
+                if (empty && rookOk && canCastle(board, color, kingSq, 0 * 8 + 2)) {
                     add_castle(kingSq, 0 * 8 + 2);
                 }
             }
         }
     }
 
-    return moves;
+    std::vector<Move> legalMoves;
+    legalMoves.reserve(moves.size());
+    PieceColor opponent = (color == PieceColor::White) ? PieceColor::Black : PieceColor::White;
+
+    for (Move move : moves) {
+        Board nextBoard = board;
+        applyMove(nextBoard, move, color);
+        if (isKingInCheck(nextBoard, color)) {
+            continue;
+        }
+
+        move.isCheck = isKingInCheck(nextBoard, opponent);
+        legalMoves.push_back(move);
+    }
+
+    return legalMoves;
 }
